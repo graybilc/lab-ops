@@ -50,7 +50,33 @@ def report(
     benchmarks = adapter.get_benchmark_files()
     typer.echo(f"Found {len(benchmarks)} benchmark log files in {repo_cfg.name}.")
 
-    # Next step: Pass these benchmark files to an LLM agent for automatic summary!
+
+@app.command()
+def changelog(
+    repo_key: str = typer.Option(
+        "polarity", "--repo", "-r", help="Target repository key"
+    ),
+    from_ref: str = typer.Option(
+        "HEAD~15", "--from", help="Git reference start (e.g. v0.1.0 or HEAD~10)"
+    ),
+):
+    """Generate high-level release notes from raw git commits."""
+    config = LabOpsConfig.load_from_yaml(CONFIG_PATH)
+    repo_cfg = config.repositories[repo_key]
+
+    typer.echo(f"Analyzing git log for {repo_cfg.name}...")
+    notes = generate_release_notes(Path(repo_cfg.path), from_ref=from_ref)
+
+    typer.secho(f"\n🚀 {notes.version_title}\n", fg=typer.colors.GREEN, bold=True)
+    typer.echo(notes.executive_summary + "\n")
+
+    typer.secho("New Capabilities:", fg=typer.colors.CYAN, bold=True)
+    for feat in notes.new_features:
+        typer.echo(f"  • {feat}")
+
+    typer.secho("\nOptimizations & Architecture:", fg=typer.colors.YELLOW, bold=True)
+    for ref in notes.refactors_and_optimizations:
+        typer.echo(f"  • {ref}")
 
 
 if __name__ == "__main__":
