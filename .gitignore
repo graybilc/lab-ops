@@ -1,0 +1,32 @@
+cat << 'EOF' > .gitignore
+# Python virtual environments
+.venv/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+.build/
+dist/
+
+# Build artifacts
+build/
+
+# Local configuration files (contains local paths & private keys)
+*.yaml
+*.yml
+!.lab-ops.yaml.example
+
+# Local databases & logs (for LanceDB / vector store)
+*.db
+*.lancedb
+*.log
+reports/
+
+# IDE settings
+.vscode/
+.idea/
+.DS_Store
+EOF

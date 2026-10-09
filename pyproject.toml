@@ -1,0 +1,24 @@
+[project]
+name = "lab-ops"
+version = "0.1.0"
+description = "Scientific Intelligence OS"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.10.0",
+    "typer>=0.12.0",
+    "pyyaml>=6.0.1",
+]
+
+# It maps the terminal command `lab-ops` to the `app()` object inside `src/lab_ops/cli.py`
+[project.scripts]
+lab-ops = "lab_ops.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black>=24.0.0",
+]
