@@ -1,0 +1,1 @@
+lab-ops is a high-throughput, CLI-driven developer operations toolkit designed to automate benchmark analysis, literature parameter extraction, and scientific manuscript generation across computational biophysics repositories.
