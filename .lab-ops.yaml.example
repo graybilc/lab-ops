@@ -1,0 +1,19 @@
+# .lab-ops.yaml.example
+global:
+  output_dir: "~/lab_ops_reports"
+  default_llm_model: "gpt-4o-mini"
+
+repositories:
+  polarity:
+    name: "Polarity Engine Core"
+    path: "~/projects/polarity-engine"
+    type: "production"
+    docs_path: "docs"
+    benchmark_dir: "benchmarks"
+
+  mechanics:
+    name: "aPKC Sandbox & Benchmarks"
+    path: "~/projects/aPKC-mechanics-analysis"
+    type: "sandbox"
+    docs_path: "docs"
+    benchmark_dir: "benchmarks"
