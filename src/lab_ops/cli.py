@@ -1,7 +1,10 @@
 from pathlib import Path
 import typer
-from lab_ops.config import LabOpsConfig
 from lab_ops.adapters.generic import GenericRepoAdapter
+from lab_ops.rag.store import ingest_pdf
+from lab_ops.extractors.kinetics import extract_kinetic_parameters
+from lab_ops.config import LabOpsConfig, CONFIG_PATH
+from lab_ops.reporting.changelog import generate_release_notes
 
 app = typer.Typer(help="lab-ops: Autonomous Scientific Intelligence OS")
 
@@ -52,31 +55,99 @@ def report(
 
 
 @app.command()
+def ingest(
+    pdf_path: Path = typer.Argument(
+        ..., help="Path to PDF research paper to ingest into local database"
+    )
+):
+    """Ingest a PDF research paper into local LanceDB literature store."""
+    typer.echo(f"Ingesting paper: {pdf_path.name}...")
+    num_chunks = ingest_pdf(pdf_path)
+    typer.secho(
+        f"Successfully indexed {num_chunks} text chunks into local DB!",
+        fg=typer.colors.GREEN,
+        bold=True,
+    )
+
+
+@app.command()
+def extract(
+    query: str = typer.Argument(
+        ..., help="Kinetic search query (e.g. 'aPKC phosphorylation rate of Lgl')"
+    )
+):
+    """Query local literature store and extract structured kinetic parameters for ODE bounds."""
+    typer.echo(f"Searching literature for: '{query}'...\n")
+    result = extract_kinetic_parameters(query)
+
+    if not result.parameters:
+        typer.secho("No matching kinetic parameters found.", fg=typer.colors.YELLOW)
+        if result.confidence_notes:
+            typer.echo(f"Note: {result.confidence_notes}")
+        return
+
+    typer.secho(
+        f"Results for target: {result.query_target}\n", fg=typer.colors.CYAN, bold=True
+    )
+    for p in result.parameters:
+        typer.echo(
+            f"  • {p.enzyme} + {p.substrate}: {p.parameter_type} = {p.value} {p.unit}"
+        )
+        if p.experimental_conditions:
+            typer.echo(f"    Conditions: {p.experimental_conditions}")
+        typer.echo(f"    Source: {p.source_citation}\n")
+
+
+@app.command()
 def changelog(
     repo_key: str = typer.Option(
-        "polarity", "--repo", "-r", help="Target repository key"
+        "polarity", "--repo", "-r", help="Target repository key in config"
     ),
     from_ref: str = typer.Option(
-        "HEAD~15", "--from", help="Git reference start (e.g. v0.1.0 or HEAD~10)"
+        "HEAD~15", "--from", help="Git ref start (e.g., HEAD~15 or v0.1.0)"
     ),
+    to_ref: str = typer.Option("HEAD", "--to", help="Git ref end (defaults to HEAD)"),
 ):
-    """Generate high-level release notes from raw git commits."""
+    """Synthesize raw Git commits into structured version release notes."""
     config = LabOpsConfig.load_from_yaml(CONFIG_PATH)
+
+    if repo_key not in config.repositories:
+        typer.secho(
+            f"Error: Repository '{repo_key}' not found in ~/.lab-ops.yaml config.",
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(code=1)
+
     repo_cfg = config.repositories[repo_key]
+    repo_path = Path(repo_cfg.path)
 
-    typer.echo(f"Analyzing git log for {repo_cfg.name}...")
-    notes = generate_release_notes(Path(repo_cfg.path), from_ref=from_ref)
+    typer.echo(f"Analyzing commits in {repo_cfg.name} ({from_ref} .. {to_ref})...\n")
 
-    typer.secho(f"\n🚀 {notes.version_title}\n", fg=typer.colors.GREEN, bold=True)
-    typer.echo(notes.executive_summary + "\n")
+    try:
+        notes = generate_release_notes(repo_path, from_ref=from_ref, to_ref=to_ref)
+    except Exception as e:
+        typer.secho(f"Failed to generate release notes: {e}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
-    typer.secho("New Capabilities:", fg=typer.colors.CYAN, bold=True)
-    for feat in notes.new_features:
-        typer.echo(f"  • {feat}")
+    typer.secho(f"🚀 {notes.version_title}", fg=typer.colors.GREEN, bold=True)
+    typer.echo(f"\n{notes.executive_summary}\n")
 
-    typer.secho("\nOptimizations & Architecture:", fg=typer.colors.YELLOW, bold=True)
-    for ref in notes.refactors_and_optimizations:
-        typer.echo(f"  • {ref}")
+    if notes.new_features:
+        typer.secho("New Capabilities:", fg=typer.colors.CYAN, bold=True)
+        for feat in notes.new_features:
+            typer.echo(f"  • {feat}")
+
+    if notes.refactors_and_optimizations:
+        typer.secho("\nRefactors & Optimizations:", fg=typer.colors.YELLOW, bold=True)
+        for ref in notes.refactors_and_optimizations:
+            typer.echo(f"  • {ref}")
+
+    if notes.breaking_changes:
+        typer.secho(
+            "\n⚠️ Breaking Changes & Schema Updates:", fg=typer.colors.RED, bold=True
+        )
+        for break_change in notes.breaking_changes:
+            typer.echo(f"  • {break_change}")
 
 
 if __name__ == "__main__":

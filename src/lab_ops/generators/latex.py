@@ -1,6 +1,7 @@
 import ast
 from pathlib import Path
 
+
 def extract_docstrings_from_file(python_file: Path) -> dict[str, str]:
     """Extracts function and class docstrings using Python's AST parser."""
     with open(python_file, "r") as f:

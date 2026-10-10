@@ -12,6 +12,9 @@ dependencies = [
     "instructor>=1.17.0",
     "pydantic-ai>=2.38.0",
     "openai>=3.3.0",
+    "pypdf>=6.20.0",
+    "numpy>=1.26.0,<2.0.0",
+    "pyarrow<17.0.0",
 ]
 
 # It maps the terminal command `lab-ops` to the `app()` object inside `src/lab_ops/cli.py`

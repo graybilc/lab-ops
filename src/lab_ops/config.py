@@ -1,8 +1,11 @@
 """Converts a plain text .yaml file into strongly-typed, validated Python objects"""
+
 from pathlib import Path
 from typing import Any
 from pydantic import BaseModel, Field, DirectoryPath
 import yaml
+
+CONFIG_PATH = Path("~/.lab-ops.yaml").expanduser()
 
 
 class RepoConfig(BaseModel):
