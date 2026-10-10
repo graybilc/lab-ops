@@ -5,6 +5,7 @@ from lab_ops.rag.store import ingest_pdf
 from lab_ops.extractors.kinetics import extract_kinetic_parameters
 from lab_ops.config import LabOpsConfig, CONFIG_PATH
 from lab_ops.reporting.changelog import generate_release_notes
+from lab_ops.reporting.benchmarks import analyze_sandbox_notebook
 
 app = typer.Typer(help="lab-ops: Autonomous Scientific Intelligence OS")
 
@@ -149,6 +150,26 @@ def changelog(
         for break_change in notes.breaking_changes:
             typer.echo(f"  • {break_change}")
 
+@app.command()
+def analyze_notebook(
+    notebook_path: Path = typer.Argument(..., help="Path to executed .ipynb file")
+):
+    """Analyze cell outputs of a sandbox notebook and extract key findings."""
+    typer.echo(f"Analyzing {notebook_path.name}...")
+    report = analyze_sandbox_notebook(notebook_path)
+    
+    typer.secho(f"\n📊 Summary for {report.notebook_name}", fg=typer.colors.GREEN, bold=True)
+    typer.echo(f"\nCore Takeaway:\n{report.core_finding}\n")
+    
+    if report.performance_notes:
+        typer.secho("Performance Metrics:", fg=typer.colors.CYAN)
+        for note in report.performance_notes:
+            typer.echo(f"  • {note}")
+            
+    if report.action_items:
+        typer.secho("\nAction Items for polarity-engine:", fg=typer.colors.YELLOW)
+        for item in report.action_items:
+            typer.echo(f"  • {item}")
 
 if __name__ == "__main__":
     app()

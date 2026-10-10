@@ -15,6 +15,8 @@ dependencies = [
     "pypdf>=6.20.0",
     "numpy>=1.26.0,<2.0.0",
     "pyarrow<17.0.0",
+    "nbformat>=5.11.1",
+    "typer-cli>=0.24.0",
 ]
 
 # It maps the terminal command `lab-ops` to the `app()` object inside `src/lab_ops/cli.py`
